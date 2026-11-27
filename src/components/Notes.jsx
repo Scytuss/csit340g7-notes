@@ -53,25 +53,32 @@ function Notes() {
     setForm({ ...form, [name]: value })
   }
 
-  function handleSubmit(event) {
-    event.preventDefault()
+  async function handleSubmit(e) {
+    e.preventDefault()
 
     const title = form.title.trim()
     const body = form.body.trim()
 
     if (!title || !body) return
 
-    const newNote = {
-      id: crypto.randomUUID(),
-      title,
-      body,
-      completed: false,
-    }
 
-    setNotes([...notes, newNote])
-    setForm({ title: '', body: '' })
-    localStorage.removeItem('draft')
-    titleRef.current.focus()
+
+    try {
+      const res = await fetch(API_URL + '/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body }),
+      })
+      if (!res.ok) {
+        throw new Error('The server answered ' + res.status)
+      }
+      const newNote = await res.json()
+      setNotes([...notes, newNote])
+      setForm({ title: '', body: '' })
+      titleRef.current.focus()
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   const handleDelete = useCallback((id) => {
